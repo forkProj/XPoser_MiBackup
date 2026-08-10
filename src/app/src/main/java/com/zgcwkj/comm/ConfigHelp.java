@@ -22,13 +22,26 @@ public class ConfigHelp {
     public static final String BACKUP_ROOT = "/sdcard/MIUI/backup";
     private static final String CONFIG_PATH = BACKUP_ROOT + "/config.ini";
 
+    // 配置缓存：按文件修改时间和大小失效，避免上传/下载热路径里反复读盘解析
+    private static volatile JSONObject sConfigCache;
+    private static volatile long sConfigLastModified;
+    private static volatile long sConfigLength;
+
     /**
      * 加载配置并补齐默认值
      * 文件不存在或部分 key 缺失时，调用方仍能拿到完整配置
+     * 命中缓存时返回副本，避免调用方误改缓存内容
      */
     public static JSONObject load() {
-        var map = new LinkedHashMap<String, String>();
         var file = new File(CONFIG_PATH);
+        var modified = file.exists() ? file.lastModified() : -1L;
+        var length = file.exists() ? file.length() : 0L;
+        var cached = sConfigCache;
+        if (cached != null && modified == sConfigLastModified && length == sConfigLength) {
+            return copyOf(cached);
+        }
+
+        var map = new LinkedHashMap<String, String>();
         if (file.exists()) {
             try (var reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
                 var line = reader.readLine();
@@ -60,7 +73,10 @@ public class ConfigHelp {
                 LogHelp.e(TAG, "put config value failed: " + entry.getKey(), e);
             }
         }
-        return json;
+        sConfigCache = json;
+        sConfigLastModified = modified;
+        sConfigLength = length;
+        return copyOf(json);
     }
 
     /**
@@ -90,6 +106,22 @@ public class ConfigHelp {
             writer.flush();
         } catch (Exception e) {
             LogHelp.e(TAG, "save config failed: " + e.getMessage(), e);
+            return;
+        }
+        // 写入成功后同步刷新缓存，避免按mtime/size无法区分同秒内两次写入的场景
+        sConfigCache = copyOf(json);
+        sConfigLastModified = file.lastModified();
+        sConfigLength = file.length();
+    }
+
+    /**
+     * 深拷贝JSONObject，避免调用方误改缓存内容
+     */
+    private static JSONObject copyOf(JSONObject source) {
+        try {
+            return new JSONObject(source.toString());
+        } catch (Exception e) {
+            return source;
         }
     }
 

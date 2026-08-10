@@ -51,4 +51,22 @@
     <string name="toast_config_saved">Configuration saved.</string>
     <string name="toast_connection_success">Connection succeeded. Configuration saved.</string>
     <string name="toast_connection_failed">Configuration saved, but the connection failed. Please check the settings.</string>
+
+    <string name="reason_unknown">Unknown error</string>
+    <string name="reason_auth">Authentication failed. Check your username and password.</string>
+    <string name="reason_refused">Cannot connect to the server. Check the address and port.</string>
+    <string name="reason_timeout">Connection timed out. Check the network and server status.</string>
+    <string name="reason_host">Cannot resolve the server address. Check it.</string>
+    <string name="reason_cleartext">Android blocks cleartext HTTP. Use HTTPS instead.</string>
+    <string name="reason_ssl">SSL certificate verification failed. Check the certificate.</string>
+    <string name="reason_not_found">File or path not found. Check the backup path and URL.</string>
+    <string name="reason_webdav_failed">WebDAV connection failed</string>
+    <string name="reason_smb_failed">SMB connection failed</string>
+    <string name="reason_custom_false">Custom script test failed</string>
+    <string name="reason_http_auth">HTTP %1$d: authentication failed. Check your username and password.</string>
+    <string name="reason_http_forbidden">HTTP %1$d: access denied. Check the account permissions.</string>
+    <string name="reason_http_not_found">HTTP %1$d: path not found. Check the backup path and URL.</string>
+    <string name="reason_http_method">HTTP %1$d: the server may not support WebDAV.</string>
+    <string name="reason_http_server">HTTP %1$d: internal server error.</string>
+    <string name="reason_http_other">HTTP %1$d</string>
 </resources>

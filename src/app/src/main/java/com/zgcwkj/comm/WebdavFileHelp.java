@@ -119,7 +119,11 @@ public class WebdavFileHelp {
     public static boolean testConnection() throws Exception {
         var url = baseUrl();
         var res = propfind(url, 0);
-        return Integer.parseInt(res[0]) == HTTP_MULTISTATUS;
+        var code = Integer.parseInt(res[0]);
+        if (code != HTTP_MULTISTATUS) {
+            throw new RuntimeException("WebDAV PROPFIND failed: HTTP " + code);
+        }
+        return true;
     }
 
     /** 列出backup_path目录中的备份子目录名 */
@@ -195,7 +199,15 @@ public class WebdavFileHelp {
         var url = baseUrl() + path;
         if (!url.endsWith("/")) url += "/";
         var request = newRequest(url).method("MKCOL", null).build();
-        try (var resp = getClient().newCall(request).execute()) {}
+        try (var resp = getClient().newCall(request).execute()) {
+            var code = resp.code();
+            // 目录已存在时部分服务器返回 405/301，视为正常；其余非 2xx 记录日志便于排查
+            if (code < 200 || code >= 300) {
+                if (code != 405 && code != 301 && code != 302) {
+                    LogHelp.w(TAG, "WebDAV MKCOL unexpected HTTP " + code + " for " + path);
+                }
+            }
+        }
     }
 
     /** 递归创建目录链 */

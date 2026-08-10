@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.zgcwkj.xpmibackup"
-        minSdk 28
+        minSdk 30
         targetSdk 36
         versionCode 260722
         versionName "1.5"

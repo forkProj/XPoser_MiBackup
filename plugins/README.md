@@ -1,4 +1,54 @@
-# 自定义 HTTP 脚本
+# 配置
+
+配置入口：系统设置 -> 云备份助手
+
+配置文件：
+
+```text
+/sdcard/MIUI/backup/config.ini
+```
+
+常用配置：
+
+| 配置项 | 说明 |
+| --- | --- |
+| `protocol` | 存储协议，`smb`、`webdav` 或 `custom` |
+| `backup_path` | 云端备份根目录，默认 `MIUI/backup` |
+| `upload_threads` | 并发上传线程数，默认 `3` |
+| `chunk_size_mb` | 上传切片大小，默认 `64`；设为 `0` 表示不切片 |
+| `backup_max` | 最大保留备份数，`0` 表示不自动清理 |
+| `device_name` | 设置页中展示的虚拟设备名称 |
+| `device_describe` | 设置页中展示的虚拟设备描述 |
+
+切片大小由 `chunk_size_mb` 控制；设为 `0` 时只上传原文件，不生成分片和 manifest。启用切片时 Cloud 层会统一生成 part 文件和 `.mibak.json` manifest，恢复时兼容未切片的旧备份文件
+
+SMB 配置：
+
+| 配置项 | 说明 |
+| --- | --- |
+| `smb_server` | SMB 服务器地址 |
+| `smb_port` | SMB 端口，默认 `445` |
+| `smb_share` | SMB 共享名 |
+| `smb_user` | SMB 用户名 |
+| `smb_pass` | SMB 密码 |
+
+WebDAV 配置：
+
+| 配置项 | 说明 |
+| --- | --- |
+| `webdav_url` | WebDAV 根地址 |
+| `webdav_user` | WebDAV 用户名 |
+| `webdav_pass` | WebDAV 密码 |
+
+自定义脚本配置：
+
+| 配置项 | 说明 |
+| --- | --- |
+| `custom_script_b64` | Base64 编码后的 JS 脚本，设置页会自动编码/解码 |
+
+自定义 HTTP 只需要在设置页输入一段完整 JS 脚本，服务器地址、Token、Cookie 和认证方式都写在脚本里，不需要额外输入框。自定义脚本的写法、接口说明和示例见下方
+
+# 自定义脚本
 
 这个目录用于存放可以粘贴到 App 自定义 HTTP 配置里的 JS 脚本。
 
@@ -78,6 +128,8 @@ function downloadFile(ctx) {
   return { handled: response.code >= 200 && response.code < 300 };
 }
 ```
+
+`downloadFile` 写法一（返回请求对象）由 Java 流式写入 `ctx.localPath`，无需设置 `readBody`；`httpDownload` 也是直接落盘。只有必须读取完整响应体（如解析 JSON 换临时下载地址）时才需要关心 `readBody` 字段
 
 ## ctx 字段
 

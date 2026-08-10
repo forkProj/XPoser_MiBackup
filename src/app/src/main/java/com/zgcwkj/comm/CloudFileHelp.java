@@ -2,10 +2,14 @@ package com.zgcwkj.comm;
 
 import org.json.JSONObject;
 
+import com.zgcwkj.xpmibackup.R;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * 云端文件访问门面
@@ -15,7 +19,7 @@ public class CloudFileHelp {
 
     private static final String TAG = "XpMiBackup";
     private static final int BUFFER_SIZE = 1048576;
-    private static final int DEFAULT_CHUNK_SIZE_MB = 64;
+    private static final int DEFAULT_CHUNK_SIZE_MB = 128;
     private static final int MIN_CHUNK_SIZE_MB = 1;
     private static final int MAX_CHUNK_SIZE_MB = 1024;
     private static final String MANIFEST_SUFFIX = ".mibak.json";
@@ -44,19 +48,113 @@ public class CloudFileHelp {
      * 测试当前配置的远端存储是否可连接
      */
     public static boolean testConnection() {
+        return testConnectionDetail(null) == null;
+    }
+
+    /**
+     * 测试连接并返回失败原因；成功时返回 null，失败时返回适合展示给用户的原因
+     */
+    public static String testConnectionDetail(android.content.Context context) {
         var protocol = getProtocol();
         try {
             if (isCustom()) {
-                return CustomHttpFileHelp.testConnection();
+                if (CustomHttpFileHelp.testConnection()) return null;
+                return msg(context, R.string.reason_custom_false);
             } else if (isWebdav()) {
-                return WebdavFileHelp.testConnection();
+                if (WebdavFileHelp.testConnection()) return null;
+                return msg(context, R.string.reason_webdav_failed);
             } else {
-                return SmbFileHelp.testConnection();
+                if (SmbFileHelp.testConnection()) return null;
+                return msg(context, R.string.reason_smb_failed);
             }
         } catch (Exception e) {
             logError("testConnection failed [protocol=" + protocol + "]", e);
-            return false;
+            return buildFailureReason(context, e);
         }
+    }
+
+    /**
+     * 按异常链识别常见连接失败场景，尽量返回用户能看懂的中文原因；
+     * 未识别时兜底返回原始异常信息
+     */
+    private static String buildFailureReason(android.content.Context ctx, Throwable t) {
+        var chain = new StringBuilder();
+        var depth = 0;
+        while (t != null && depth < 8) {
+            var message = t.getMessage();
+            if (message != null && !message.isEmpty()) {
+                if (chain.length() > 0) chain.append(" -> ");
+                chain.append(message);
+            }
+            t = t.getCause();
+            depth++;
+        }
+        var raw = chain.toString();
+        var lower = raw.toLowerCase(Locale.ROOT);
+
+        // WebDAV返回的HTTP状态码优先解析
+        var http = Pattern.compile("http (\\d{3})").matcher(lower);
+        if (http.find()) {
+            return httpStatusReason(ctx, Integer.parseInt(http.group(1)));
+        }
+        // 认证失败
+        if (lower.contains("logon") || lower.contains("authentication") || lower.contains("access denied")) {
+            return msg(ctx, R.string.reason_auth);
+        }
+        // 连接被拒绝 / 网络不可达
+        if (lower.contains("connection refused") || lower.contains("unreachable")) {
+            return msg(ctx, R.string.reason_refused);
+        }
+        // 连接超时
+        if (lower.contains("timed out") || lower.contains("timeout")) {
+            return msg(ctx, R.string.reason_timeout);
+        }
+        // 域名解析失败
+        if (lower.contains("unknownhost")) {
+            return msg(ctx, R.string.reason_host);
+        }
+        // Android禁止明文HTTP
+        if (lower.contains("cleartext")) {
+            return msg(ctx, R.string.reason_cleartext);
+        }
+        // SSL/证书问题
+        if (lower.contains("ssl") || lower.contains("certificate")) {
+            return msg(ctx, R.string.reason_ssl);
+        }
+        // 路径或文件不存在
+        if (lower.contains("file not found") || lower.contains("not found")) {
+            return msg(ctx, R.string.reason_not_found);
+        }
+        if (raw.isEmpty()) {
+            return msg(ctx, R.string.reason_unknown);
+        }
+        return raw;
+    }
+
+    /**
+     * 将WebDAV HTTP状态码翻译成可读的中文原因
+     */
+    private static String httpStatusReason(android.content.Context ctx, int code) {
+        if (code == 401) {
+            return msg(ctx, R.string.reason_http_auth, code);
+        } else if (code == 403) {
+            return msg(ctx, R.string.reason_http_forbidden, code);
+        } else if (code == 404) {
+            return msg(ctx, R.string.reason_http_not_found, code);
+        } else if (code == 405) {
+            return msg(ctx, R.string.reason_http_method, code);
+        } else if (code >= 500) {
+            return msg(ctx, R.string.reason_http_server, code);
+        }
+        return msg(ctx, R.string.reason_http_other, code);
+    }
+
+    /**
+     * 读取本地化字符串；无Context时返回空串（此时调用方只关心是否成功）
+     */
+    private static String msg(android.content.Context ctx, int resId, Object... args) {
+        if (ctx == null) return "";
+        return args.length > 0 ? ctx.getString(resId, args) : ctx.getString(resId);
     }
 
     /**

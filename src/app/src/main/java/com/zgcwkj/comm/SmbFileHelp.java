@@ -51,7 +51,7 @@ public class SmbFileHelp {
                 this.session = this.connection.authenticate(new AuthenticationContext(user, pass.toCharArray(), ""));
                 this.share = (DiskShare) session.connectShare(shareName);
             } catch (Exception e) {
-                throw new RuntimeException("SMB connect failed", e);
+                throw new RuntimeException("SMB connect failed: " + server + ":" + port, e);
             }
         }
 

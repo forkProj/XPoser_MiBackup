@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -44,6 +45,9 @@ public class CustomHttpFileHelp {
     private static volatile OkHttpClient sClient;
 
     private static volatile String sDefaultScript;
+    // 已编译脚本缓存：脚本内容不变时复用编译结果，避免每个文件/分片都重新解析
+    private static volatile String sCachedScriptText;
+    private static volatile Script sCachedScript;
     private static final ThreadLocal<UploadContext> sUploadContext = new ThreadLocal<>();
     private static final ThreadLocal<DownloadContext> sDownloadContext = new ThreadLocal<>();
 
@@ -270,7 +274,7 @@ public class CustomHttpFileHelp {
             cx.setClassShutter(className -> false);
             var scope = cx.initStandardObjects();
             installUtilityFunctions(scope);
-            cx.evaluateString(scope, script(), "custom-storage.js", 1, null);
+            compiledScript(cx).exec(cx, scope);
             var fn = ScriptableObject.getProperty(scope, functionName);
             if (!(fn instanceof org.mozilla.javascript.Function)) {
                 if (required) {
@@ -652,6 +656,22 @@ public class CustomHttpFileHelp {
         headers.putAll(response.headers);
         ScriptableObject.putProperty(obj, "headers", toNativeObject(scope, headers));
         return obj;
+    }
+
+    /**
+     * 按脚本内容缓存编译结果；设置页修改脚本后内容变化会自动重新编译
+     * 编译后的Script对象可被多个线程各自在自己的Scope上并发执行
+     */
+    private static Script compiledScript(Context cx) throws Exception {
+        var text = script();
+        var cached = sCachedScript;
+        if (cached != null && text != null && text.equals(sCachedScriptText)) {
+            return cached;
+        }
+        var compiled = cx.compileString(text, "custom-storage.js", 1, null);
+        sCachedScript = compiled;
+        sCachedScriptText = text;
+        return compiled;
     }
 
     /** 从配置读取用户脚本；未配置或解码失败时使用默认示例脚本 */

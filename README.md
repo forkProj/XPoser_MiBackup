@@ -1,6 +1,6 @@
 # XPoser_MiBackup - 小米云备份助手
 
-[![Android](https://img.shields.io/badge/Android-9.0+-blue)](https://www.android.com)
+[![Android](https://img.shields.io/badge/Android-11+-blue)](https://www.android.com)
 [![GitHub](https://img.shields.io/badge/GitHub-repo-blue)](https://github.com/zgcwkjOpenProject/XPoser_MiBackup)
 [![LSPosed](https://img.shields.io/badge/LSPosed-supported-green)](https://modules.lsposed.org)
 [![XposedModule](https://img.shields.io/badge/XposedModule-repo-green)](https://github.com/Xposed-Modules-Repo/com.zgcwkj.xpmibackup)
@@ -42,59 +42,9 @@
 
 ## 环境要求
 
-- Android 9.0+（minSdk 28）
-- 已安装 Xposed 框架（LSPatch / LSPosed / EdXposed 等）
+- Android 11+（minSdk 30）
+- 已安装 Xposed 框架（LSPosed / EdXposed 等）
 - 支持的 Xposed 作用域：`com.android.settings`、`com.miui.backup`
-
-## 配置
-
-配置入口：系统设置 -> 云备份助手
-
-配置文件：
-
-```text
-/sdcard/MIUI/backup/config.ini
-```
-
-常用配置：
-
-| 配置项 | 说明 |
-| --- | --- |
-| `protocol` | 存储协议，`smb`、`webdav` 或 `custom` |
-| `backup_path` | 云端备份根目录，默认 `MIUI/backup` |
-| `upload_threads` | 并发上传线程数，默认 `3` |
-| `chunk_size_mb` | 上传切片大小，默认 `64`；设为 `0` 表示不切片 |
-| `backup_max` | 最大保留备份数，`0` 表示不自动清理 |
-| `device_name` | 设置页中展示的虚拟设备名称 |
-| `device_describe` | 设置页中展示的虚拟设备描述 |
-
-SMB 配置：
-
-| 配置项 | 说明 |
-| --- | --- |
-| `smb_server` | SMB 服务器地址 |
-| `smb_port` | SMB 端口，默认 `445` |
-| `smb_share` | SMB 共享名 |
-| `smb_user` | SMB 用户名 |
-| `smb_pass` | SMB 密码 |
-
-WebDAV 配置：
-
-| 配置项 | 说明 |
-| --- | --- |
-| `webdav_url` | WebDAV 根地址 |
-| `webdav_user` | WebDAV 用户名 |
-| `webdav_pass` | WebDAV 密码 |
-
-自定义 HTTP 脚本配置：
-
-| 配置项 | 说明 |
-| --- | --- |
-| `custom_script_b64` | Base64 编码后的 JS 脚本，设置页会自动编码/解码 |
-
-自定义 HTTP 只需要在设置页输入一段完整 JS 脚本，服务器地址、Token、Cookie 和认证方式都写在脚本里，不需要额外输入框。自定义脚本的写法、接口说明和示例见 [自定义 HTTP 脚本文档](plugins/README.md)
-
-切片大小由 `chunk_size_mb` 控制；设为 `0` 时只上传原文件，不生成分片和 manifest。启用切片时 Cloud 层会统一生成 part 文件和 `.mibak.json` manifest，恢复时兼容未切片的旧备份文件
 
 ## 项目结构
 
@@ -106,6 +56,9 @@ app/src/main/java/com/zgcwkj/
     SmbFileHelp.java      SMB 实现
     WebdavFileHelp.java   WebDAV 实现
     CustomHttpFileHelp.java 自定义 HTTP 脚本实现
+    LocalBackupFileHelp.java 小米备份本地临时文件工具
+    LogHelp.java          日志输出（logcat + 文件）
+    ProgressCallbackHelp.java 进度回调参数清洗
   xpmibackup/
     XposedEntry.java      Xposed 入口
     MainActivity.java     配置界面 Activity
@@ -145,25 +98,6 @@ app/build/outputs/apk/debug/app-debug.apk
 ```
 
 安装后在 Xposed/LSPosed 中启用模块，并重启目标 App 或设备
-
-## 云端目录
-
-默认远端根目录：
-
-```text
-MIUI/backup
-```
-
-备份目录示例：
-
-```text
-MIUI/backup/20260711_000000/
-  descript.xml
-  end
-  ...
-```
-
-DFS 虚拟路径中的 `.AllBackup`、`.AppBackup` 等片段不会写入云端真实路径
 
 ## 依赖
 

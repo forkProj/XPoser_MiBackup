@@ -475,7 +475,8 @@ public class AIDLHook {
             logError("mock upload failed", e);
             notifyProgressFinish(listener, taskId, -1, e.getMessage());
         } catch (Throwable th) {
-            throw th;
+            logError("mock upload failed (fatal)", th);
+            notifyProgressFinish(listener, taskId, -1, th.getMessage());
         } finally {
             closeQuietly(pfd);
         }
@@ -516,7 +517,8 @@ public class AIDLHook {
             logError("mock download failed: path=" + aidlPath + ", start=" + startPos + ", flags=" + flags, e);
             notifyProgressFinish(listener, taskId, -1, e.getMessage());
         } catch (Throwable th) {
-            throw th;
+            logError("mock download failed (fatal): path=" + aidlPath + ", start=" + startPos + ", flags=" + flags, th);
+            notifyProgressFinish(listener, taskId, -1, th.getMessage());
         } finally {
             closeQuietly(pfd);
         }

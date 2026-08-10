@@ -117,18 +117,19 @@ public class ServiceConfigFragment extends Fragment {
         new Thread(() -> {
             // testConnection会从配置文件读取最新协议参数
             saveConfig();
-            var ok = com.zgcwkj.comm.CloudFileHelp.testConnection();
+            var activity = getActivity();
+            var reason = com.zgcwkj.comm.CloudFileHelp.testConnectionDetail(activity);
+            if (activity == null) return;
 
-            if (getActivity() == null) return;
-            getActivity().runOnUiThread(() -> {
+            activity.runOnUiThread(() -> {
                 testingPanel.setVisibility(View.GONE);
                 btnSave.setEnabled(true);
                 btnSave.setText(R.string.test_and_save_config);
 
-                if (ok) {
-                    Toast.makeText(getActivity(), R.string.toast_connection_success, Toast.LENGTH_SHORT).show();
+                if (reason == null) {
+                    Toast.makeText(activity, R.string.toast_connection_success, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getActivity(), R.string.toast_connection_failed, Toast.LENGTH_LONG).show();
+                    Toast.makeText(activity, activity.getString(R.string.toast_connection_failed) + "\n" + reason, Toast.LENGTH_LONG).show();
                 }
             });
         }).start();

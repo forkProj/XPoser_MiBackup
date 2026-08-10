@@ -51,4 +51,22 @@
     <string name="toast_config_saved">配置已保存</string>
     <string name="toast_connection_success">连接成功，配置已保存</string>
     <string name="toast_connection_failed">配置已保存，但连接失败，请检查参数</string>
+
+    <string name="reason_unknown">未知错误</string>
+    <string name="reason_auth">认证失败，请检查用户名和密码</string>
+    <string name="reason_refused">无法连接服务器，请检查地址和端口</string>
+    <string name="reason_timeout">连接超时，请检查网络和服务器状态</string>
+    <string name="reason_host">无法解析服务器地址，请检查服务器地址是否正确</string>
+    <string name="reason_cleartext">Android 禁止明文 HTTP，请改用 HTTPS</string>
+    <string name="reason_ssl">SSL 证书校验失败，请检查证书配置</string>
+    <string name="reason_not_found">文件或路径不存在，请检查备份路径和 URL</string>
+    <string name="reason_webdav_failed">WebDAV 连接失败</string>
+    <string name="reason_smb_failed">SMB 连接失败</string>
+    <string name="reason_custom_false">自定义脚本测试未通过</string>
+    <string name="reason_http_auth">HTTP %1$d：认证失败，请检查用户名和密码</string>
+    <string name="reason_http_forbidden">HTTP %1$d：权限不足，请检查账号权限</string>
+    <string name="reason_http_not_found">HTTP %1$d：路径不存在，请检查备份路径和 URL</string>
+    <string name="reason_http_method">HTTP %1$d：服务器可能不支持 WebDAV</string>
+    <string name="reason_http_server">HTTP %1$d：服务器内部错误</string>
+    <string name="reason_http_other">HTTP %1$d</string>
 </resources>
